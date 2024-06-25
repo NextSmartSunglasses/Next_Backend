@@ -16,12 +16,12 @@ const uploadPhoto = async (req, res) => {
       console.error('Error reading EXIF data:', error.message);
     }
 
-    const { name, userId } = req.body; // Assuming userId is passed in the request body
+    const { name, userId } = req.body;
     const newPhoto = new Photo({
       name: req.file.originalname,
       data: req.file.buffer,
       contentType: req.file.mimetype,
-      user: userId, // Associate the photo with the user ID
+      user: userId,
       metadata: metadata
     });
 
@@ -35,7 +35,7 @@ const uploadPhoto = async (req, res) => {
 
 const getPhotos = async (req, res) => {
   try {
-    const userId = req.user._id; // Retrieve user ID from the authenticated user
+    const userId = req.user._id;
     const photos = await Photo.find({ user: userId });
 
     const photosWithBase64 = photos.map(photo => ({
