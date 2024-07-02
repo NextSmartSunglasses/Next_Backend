@@ -17,6 +17,8 @@ const photoSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  extractedText: String, // Add this line to include extracted text
+
   user: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 

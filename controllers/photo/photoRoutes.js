@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const photoController = require('./photoController');
+const videoController = require('./videoController');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -14,6 +15,10 @@ module.exports = (db, jwt, errors, utils) => {
 
     // Route for viewing user's photos (with authentication)
     router.get('/photos/user', jsonverify, photoController.getPhotos); // Ensure jsonverify is correctly imported and used
+    router.post('/uploadVideo', upload.single('video'), videoController.uploadVideo);
+    router.get('/videos/user', jsonverify, videoController.getVideos);
+    router.get('/texts/user', jsonverify, photoController.getExtractedTexts);
+
 
     return router;
 };
