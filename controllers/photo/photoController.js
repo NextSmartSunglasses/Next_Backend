@@ -78,6 +78,63 @@ const getExtractedTexts = async (req, res) => {
 const getPhotos = async (req, res) => {
   try {
     const userId = req.user._id;
+    // Fetch photos that are not marked for text extraction
+    const photos = await Photo.find({ user: userId, isTextPhoto: false });
+
+    const photosWithBase64 = photos.map(photo => ({
+      name: photo.name,
+      data: photo.data.toString('base64'),
+      contentType: photo.contentType,
+      uploadedAt: photo.uploadedAt,
+    }));
+
+    res.status(200).json(photosWithBase64);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const uploadPhotoForTextExtraction = async (req, res) => {
+  try {
+    let metadata = {};
+    try {
+      const exifData = await new Promise((resolve, reject) => {
+        new ExifImage({ image: req.file.buffer }, (error, exifData) => {
+          if (error) reject(error);
+          else resolve(exifData);
+        });
+      });
+      metadata = exifData;
+    } catch (error) {
+      console.error('Error reading EXIF data:', error.message);
+    }
+
+    const { name, userId } = req.body;
+
+    const newPhoto = new Photo({
+      name: req.file.originalname,
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+      user: userId,
+      metadata: metadata
+    });
+
+    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng');
+
+    newPhoto.extractedText = text;
+    await newPhoto.save();
+
+    const base64Image = req.file.buffer.toString('base64');
+    res.status(201).json({ message: 'Photo uploaded and text extracted successfully!', extractedText: text, image: base64Image });
+  } catch (error) {
+    console.error('Error uploading photo:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getPhotosWithText = async (req, res) => {
+  try {
+    const userId = req.user._id;
     const photos = await Photo.find({ user: userId });
 
     const photosWithBase64 = photos.map(photo => ({
@@ -85,7 +142,7 @@ const getPhotos = async (req, res) => {
       data: photo.data.toString('base64'),
       contentType: photo.contentType,
       uploadedAt: photo.uploadedAt,
-      extractedText: photo.extractedText // Include extracted text
+      extractedText: photo.extractedText,
     }));
 
     res.status(200).json(photosWithBase64);
@@ -97,6 +154,9 @@ const getPhotos = async (req, res) => {
 module.exports = {
   uploadPhoto,
   getPhotos,
-  getExtractedTexts // Add this line
+  getExtractedTexts, // Add this line
+  uploadPhotoForTextExtraction, // Add this line
+  getPhotosWithText
+
 
 };

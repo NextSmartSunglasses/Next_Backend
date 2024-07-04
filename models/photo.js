@@ -18,10 +18,12 @@ const photoSchema = new mongoose.Schema({
     default: Date.now
   },
   extractedText: String, // Add this line to include extracted text
+  isTextPhoto: { type: Boolean, default: false }, // Add this field
 
-  user: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
+
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true // Ensure this field is required
   }
 });

@@ -17,8 +17,10 @@ module.exports = (db, jwt, errors, utils) => {
     router.get('/photos/user', jsonverify, photoController.getPhotos); // Ensure jsonverify is correctly imported and used
     router.post('/uploadVideo', upload.single('video'), videoController.uploadVideo);
     router.get('/videos/user', jsonverify, videoController.getVideos);
-    router.get('/texts/user', jsonverify, photoController.getExtractedTexts);
 
+    // Routes for text extraction
+    router.post('/uploadForText', upload.single('photo'), photoController.uploadPhotoForTextExtraction);
+    router.get('/photos/texts/user', jsonverify, photoController.getPhotosWithText);
 
     return router;
 };
