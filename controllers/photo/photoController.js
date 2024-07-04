@@ -1,5 +1,6 @@
 const ExifImage = require('exif').ExifImage;
 const Tesseract = require('tesseract.js');
+const sharp = require('sharp');
 const Photo = require('../../models/photo');
 
 const uploadPhoto = async (req, res) => {
@@ -20,7 +21,8 @@ const uploadPhoto = async (req, res) => {
     }
 
     try {
-      extractedText = await extractTextFromImage(req.file.buffer);
+      const processedImage = await preprocessImage(req.file.buffer);
+      extractedText = await extractTextFromImage(processedImage);
     } catch (error) {
       console.error('Error extracting text from image:', error.message);
     }
@@ -40,6 +42,20 @@ const uploadPhoto = async (req, res) => {
   } catch (error) {
     console.error('Error uploading photo:', error.message);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const preprocessImage = async (imageBuffer) => {
+  try {
+    const processedImage = await sharp(imageBuffer)
+      .grayscale()
+      .sharpen()
+      .threshold()
+      .toBuffer();
+    return processedImage;
+  } catch (error) {
+    console.error('Error processing the image:', error);
+    throw error;
   }
 };
 
@@ -75,10 +91,10 @@ const getExtractedTexts = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 const getPhotos = async (req, res) => {
   try {
     const userId = req.user._id;
-    // Fetch photos that are not marked for text extraction
     const photos = await Photo.find({ user: userId, isTextPhoto: false });
 
     const photosWithBase64 = photos.map(photo => ({
@@ -119,7 +135,8 @@ const uploadPhotoForTextExtraction = async (req, res) => {
       metadata: metadata
     });
 
-    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng');
+    const processedImage = await preprocessImage(req.file.buffer);
+    const { data: { text } } = await Tesseract.recognize(processedImage, 'eng');
 
     newPhoto.extractedText = text;
     await newPhoto.save();
@@ -147,16 +164,14 @@ const getPhotosWithText = async (req, res) => {
 
     res.status(200).json(photosWithBase64);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status500.json({ message: err.message });
   }
 };
 
 module.exports = {
   uploadPhoto,
   getPhotos,
-  getExtractedTexts, // Add this line
-  uploadPhotoForTextExtraction, // Add this line
+  getExtractedTexts,
+  uploadPhotoForTextExtraction,
   getPhotosWithText
-
-
 };
