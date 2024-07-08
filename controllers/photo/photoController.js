@@ -93,6 +93,7 @@ const getExtractedTexts = async (req, res) => {
       name: photo.name,
       extractedText: photo.extractedText || 'No text extracted',
       qrCodeData: photo.qrCodeData || 'No QR/Barcode data',
+      image: photo.data ? photo.data.toString('base64') : null,
       uploadedAt: photo.uploadedAt,
     }));
 
@@ -109,7 +110,7 @@ const getPhotos = async (req, res) => {
 
     const photosWithBase64 = photos.map(photo => ({
       name: photo.name,
-      data: photo.data.toString('base64'),
+      data: photo.data ? photo.data.toString('base64') : null,
       contentType: photo.contentType,
       uploadedAt: photo.uploadedAt,
     }));
@@ -166,7 +167,7 @@ const getPhotosWithText = async (req, res) => {
 
     const photosWithBase64 = photos.map(photo => ({
       name: photo.name,
-      data: photo.data.toString('base64'),
+      data: photo.data ? photo.data.toString('base64') : null,
       contentType: photo.contentType,
       uploadedAt: photo.uploadedAt,
       extractedText: photo.extractedText,
@@ -174,7 +175,25 @@ const getPhotosWithText = async (req, res) => {
 
     res.status(200).json(photosWithBase64);
   } catch (err) {
-    res.status500.json({ message: err.message });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const uploadScannedQRCode = async (req, res) => {
+  try {
+    const { qrCodeData, userId } = req.body;
+
+    const newQRCode = new Photo({
+      name: 'Scanned QR Code',
+      qrCodeData: qrCodeData,
+      user: userId,
+    });
+
+    await newQRCode.save();
+    res.status(201).json({ message: 'QR Code saved successfully!', qrCodeData: qrCodeData });
+  } catch (error) {
+    console.error('Error saving QR code:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -182,6 +201,7 @@ module.exports = {
   uploadPhoto,
   getPhotos,
   getExtractedTexts,
+  uploadScannedQRCode,
   uploadPhotoForTextExtraction,
   getPhotosWithText
 };
