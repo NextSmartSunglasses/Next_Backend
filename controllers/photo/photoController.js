@@ -1,12 +1,14 @@
 const ExifImage = require('exif').ExifImage;
 const Tesseract = require('tesseract.js');
 const sharp = require('sharp');
+const QRCode = require('qrcode');
 const Photo = require('../../models/photo');
 
 const uploadPhoto = async (req, res) => {
   try {
     let metadata = {};
     let extractedText = '';
+    let qrCodeData = '';
 
     try {
       const exifData = await new Promise((resolve, reject) => {
@@ -27,6 +29,12 @@ const uploadPhoto = async (req, res) => {
       console.error('Error extracting text from image:', error.message);
     }
 
+    try {
+      qrCodeData = await QRCode.toDataURL(req.file.buffer);
+    } catch (error) {
+      console.error('Error extracting QR code data:', error.message);
+    }
+
     const { name, userId } = req.body;
     const newPhoto = new Photo({
       name: req.file.originalname,
@@ -34,11 +42,12 @@ const uploadPhoto = async (req, res) => {
       contentType: req.file.mimetype,
       user: userId,
       metadata: metadata,
-      extractedText: extractedText
+      extractedText: extractedText,
+      qrCodeData: qrCodeData
     });
 
     await newPhoto.save();
-    res.status(201).json({ message: 'Photo uploaded successfully!', metadata: metadata, extractedText: extractedText });
+    res.status(201).json({ message: 'Photo uploaded successfully!', metadata: metadata, extractedText: extractedText, qrCodeData: qrCodeData });
   } catch (error) {
     console.error('Error uploading photo:', error.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -63,7 +72,7 @@ const extractTextFromImage = async (imageBuffer) => {
   try {
     const { data: { text } } = await Tesseract.recognize(
       imageBuffer,
-      'eng',
+      'eng+fra+ara', // Adding multiple languages here
       {
         logger: m => console.log(m) // Log progress
       }
@@ -82,7 +91,8 @@ const getExtractedTexts = async (req, res) => {
 
     const texts = photos.map(photo => ({
       name: photo.name,
-      extractedText: photo.extractedText,
+      extractedText: photo.extractedText || 'No text extracted',
+      qrCodeData: photo.qrCodeData || 'No QR/Barcode data',
       uploadedAt: photo.uploadedAt,
     }));
 

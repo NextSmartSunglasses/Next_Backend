@@ -1,36 +1,39 @@
-var express = require('express');
+const express = require('express');
+const passport = require('./passport'); // Import passport configuration
 const maker = require('./use-cases');
 const makeCallback = require('../../config/callback');
-let E = null,
-  utils = null;
-var router = express.Router();
+let E = null, utils = null;
+let router = express.Router();
 let usecases;
+
 function init() {
   usecases = maker(utils, E);
-  var v = require('./validations')(E);
+  const v = require('./validations')(E);
   router.post('/signin', v.loginvalidator, makeCallback(usecases.signin));
-
   router.post('/signup', v.signupValidator, makeCallback(usecases.signup));
-  router.post('/forgot',makeCallback(usecases.forgot))
-  router.post('/reset',makeCallback(usecases.reset))
-  router.get('/verify/:id',makeCallback(usecases.verifyUser))
+  router.post('/forgot', makeCallback(usecases.forgot));
+  router.post('/reset', makeCallback(usecases.reset));
+  router.get('/verify/:id', makeCallback(usecases.verifyUser));
+  
+  router.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+  
+  router.post('/auth/facebook/callback', (req, res) => {
+    const accessToken = req.body.access_token;
 
-  // router.get("/script",
-  // 	makeCallback(usecases.script))
+    passport.authenticate('facebook', { session: false }, (err, user, info) => {
+      if (err) {
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
 
-  // router.get("/script/access",
-  // 	makeCallback(usecases.accessScript))
+      // Generate a token or session for the user
+      const token = generateToken(user); // You need to implement this function
+      res.json({ token, user });
+    })(req, res);
+  });
 }
-
-// let useCases = {
-// 	signin : usecases.signin,
-// 	signup,
-// 	forgot,
-// 	reset,
-// 	invitation,
-// 	bulkSignUp,
-// 	getOrganization
-// }
 function handler(usecase) {}
 exports.router = function (U, errors) {
   utils = U;

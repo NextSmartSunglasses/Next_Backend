@@ -1,33 +1,14 @@
 const mongoose = require('mongoose');
 
 const photoSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
-  },
-  data: {
-    type: Buffer,
-    required: true
-  },
-  contentType: {
-    type: String,
-    required: true
-  },
-  uploadedAt: {
-    type: Date,
-    default: Date.now
-  },
-  extractedText: String, // Add this line to include extracted text
-  isTextPhoto: { type: Boolean, default: false }, // Add this field
-
-
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true // Ensure this field is required
-  }
+  name: String,
+  data: Buffer,
+  contentType: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  metadata: Object,
+  extractedText: String,
+  qrCodeData: String, // Add this field
+  createdAt: { type: Date, default: Date.now }
 });
 
-const Photo = mongoose.model('Photo', photoSchema);
-
-module.exports = Photo;
+module.exports = mongoose.model('Photo', photoSchema);

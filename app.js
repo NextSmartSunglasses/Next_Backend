@@ -1,14 +1,18 @@
+require('dotenv').config(); // Load environment variables at the beginning
+console.log('FACEBOOK_APP_ID:', process.env.FACEBOOK_APP_ID); // Log to check if they are loaded
+console.log('FACEBOOK_APP_SECRET:', process.env.FACEBOOK_APP_SECRET);
+
 var createError = require("http-errors");
 var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-var bodyLogger = require("morgan-body");
+const session = require('express-session'); // Import express-session
+const passport = require('./controllers/user/passport'); // Import passport configuration
+
 const cors = require("cors");
 const jwt = require('jsonwebtoken'); // Ensure you have jwt package installed
-
 const limiter = require('./config/limiter');
-require("dotenv").config({ path: path.resolve(process.cwd(), ".env") });
 require('./config/db');
 
 if (process.env.NODE_ENV == "development") {
@@ -37,7 +41,15 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(limiter.IPLimiter);
 
-// Routes setup
+app.use(session({
+    secret: 'your secret',
+    resave: false,
+    saveUninitialized: true,
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use("/s/api/", api);
 app.use('/api', photoRoutes); // Using '/api' as the base path for the routes
 
