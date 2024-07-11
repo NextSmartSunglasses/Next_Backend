@@ -30,7 +30,14 @@ const uploadPhoto = async (req, res) => {
     }
 
     try {
-      qrCodeData = await QRCode.toDataURL(req.file.buffer);
+      // Assuming you need to decode QR code instead of generating it
+      const qrResult = await new Promise((resolve, reject) => {
+        QRCode.decode(req.file.buffer, (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        });
+      });
+      qrCodeData = qrResult ? qrResult : 'No QR code detected';
     } catch (error) {
       console.error('Error extracting QR code data:', error.message);
     }
@@ -84,6 +91,27 @@ const extractTextFromImage = async (imageBuffer) => {
   }
 };
 
+const getPhotosWithText = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const photos = await Photo.find({ user: userId });
+
+    const photosWithText = photos.map(photo => ({
+      name: photo.name,
+      data: photo.data ? photo.data.toString('base64') : '',
+      contentType: photo.contentType,
+      metadata: photo.metadata,
+      extractedText: photo.extractedText || 'No text extracted',
+      qrCodeData: photo.qrCodeData || 'No QR/Barcode data',
+    }));
+
+    res.status(200).json(photosWithText);
+  } catch (error) {
+    console.error('Error retrieving photos:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 const getExtractedTexts = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -93,33 +121,36 @@ const getExtractedTexts = async (req, res) => {
       name: photo.name,
       extractedText: photo.extractedText || 'No text extracted',
       qrCodeData: photo.qrCodeData || 'No QR/Barcode data',
-      image: photo.data ? photo.data.toString('base64') : null,
+      image: photo.data ? photo.data.toString('base64') : '',
       uploadedAt: photo.uploadedAt,
     }));
 
     res.status(200).json(texts);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error retrieving texts:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 const getPhotos = async (req, res) => {
   try {
     const userId = req.user._id;
-    const photos = await Photo.find({ user: userId, isTextPhoto: false });
+    const photos = await Photo.find({ user: userId });
 
     const photosWithBase64 = photos.map(photo => ({
       name: photo.name,
-      data: photo.data ? photo.data.toString('base64') : null,
+      data: photo.data ? photo.data.toString('base64') : '', // Ensure data is base64 encoded
       contentType: photo.contentType,
       uploadedAt: photo.uploadedAt,
     }));
 
     res.status(200).json(photosWithBase64);
   } catch (err) {
+    console.error('Error retrieving photos:', err.message);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 const uploadPhotoForTextExtraction = async (req, res) => {
   try {
@@ -157,25 +188,6 @@ const uploadPhotoForTextExtraction = async (req, res) => {
   } catch (error) {
     console.error('Error uploading photo:', error.message);
     res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-const getPhotosWithText = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const photos = await Photo.find({ user: userId });
-
-    const photosWithBase64 = photos.map(photo => ({
-      name: photo.name,
-      data: photo.data ? photo.data.toString('base64') : null,
-      contentType: photo.contentType,
-      uploadedAt: photo.uploadedAt,
-      extractedText: photo.extractedText,
-    }));
-
-    res.status(200).json(photosWithBase64);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
 };
 
