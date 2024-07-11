@@ -19,7 +19,7 @@ console.log('FACEBOOK_APP_SECRET in passport.js:', process.env.FACEBOOK_APP_SECR
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: "https://next-backend-q0ev.onrender.com/s/api/user/auth/facebook/callback", // Adjust the URL and port as necessary
+  callbackURL: "http://localhost:4000/s/api/user/auth/facebook/callback", // Adjust the URL and port as necessary
   profileFields: ['id', 'displayName', 'email'],
 },
   async (accessToken, refreshToken, profile, done) => {
