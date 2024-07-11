@@ -22,9 +22,9 @@ passport.use(new FacebookStrategy({
   callbackURL: "http://localhost:4000/s/api/user/auth/facebook/callback", // Adjust the URL and port as necessary
   profileFields: ['id', 'displayName', 'email'],
 },
-  (accessToken, refreshToken, profile, done) => {
-    User.findOne({ facebookId: profile.id }, (err, user) => {
-      if (err) return done(err);
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      let user = await User.findOne({ facebookId: profile.id });
       if (!user) {
         user = new User({
           name: profile.displayName,
@@ -32,14 +32,12 @@ passport.use(new FacebookStrategy({
           facebookId: profile.id,
           accessToken: accessToken,
         });
-        user.save((err) => {
-          if (err) console.log(err);
-          return done(err, user);
-        });
-      } else {
-        return done(err, user);
+        await user.save();
       }
-    });
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
   }
 ));
 
