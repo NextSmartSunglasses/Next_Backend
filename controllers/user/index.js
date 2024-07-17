@@ -2,7 +2,7 @@ const express = require('express');
 const passport = require('./passport'); // Import passport configuration
 const maker = require('./use-cases');
 const makeCallback = require('../../config/callback');
-const jsonverify = require('../../middlewares/jsonverify')
+const generateToken = require('../../middlewares/generateToken'); // Import the generateToken function
 let E = null, utils = null;
 let router = express.Router();
 let usecases;
@@ -22,22 +22,23 @@ function init() {
   router.get('/auth/facebook/callback', (req, res, next) => {
     passport.authenticate('facebook', (err, user, info) => {
       if (err) {
+        console.error('Authentication error:', err); // Log the error
         return res.status(500).json({ error: 'Internal Server Error' });
       }
       if (!user) {
+        console.warn('No user found:', info); // Log the warning
         return res.status(401).json({ error: 'Unauthorized' });
       }
-  
+
       // Generate a token or session for the user
-      const token = jsonverify(user); // Implement this function
-  
+      const token = generateToken(user); // Use the generateToken function
+
       // Redirect back to frontend with the token
       res.redirect(`http://localhost:3000?token=${token}`);
       // For production, use your actual frontend URL
       // res.redirect(`https://your-frontend-domain.com?token=${token}`);
     })(req, res, next);
   });
-  
 }
 
 function handler(usecase) {}
