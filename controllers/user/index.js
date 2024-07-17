@@ -26,14 +26,17 @@ function init() {
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-
+  
       // Generate a token or session for the user
       const token = generateToken(user); // Implement this function
-
+  
       // Redirect back to frontend with the token
-      res.redirect(`http://127.0.0.1:58319?token=${token}`);
+      res.redirect(`http://localhost:3000?token=${token}`);
+      // For production, use your actual frontend URL
+      // res.redirect(`https://your-frontend-domain.com?token=${token}`);
     })(req, res, next);
   });
+  
 }
 
 function handler(usecase) {}
