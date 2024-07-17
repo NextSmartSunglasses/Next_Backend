@@ -2,6 +2,7 @@ const express = require('express');
 const passport = require('./passport'); // Import passport configuration
 const maker = require('./use-cases');
 const makeCallback = require('../../config/callback');
+const authenticateToken = require('../../middlewares/authenticateToken')
 let E = null, utils = null;
 let router = express.Router();
 let usecases;
@@ -28,7 +29,7 @@ function init() {
       }
   
       // Generate a token or session for the user
-      const token = generateToken(user); // Implement this function
+      const token = authenticateToken(user); // Implement this function
   
       // Redirect back to frontend with the token
       res.redirect(`http://localhost:3000?token=${token}`);
