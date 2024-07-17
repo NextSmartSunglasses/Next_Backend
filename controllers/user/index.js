@@ -14,12 +14,11 @@ function init() {
   router.post('/forgot', makeCallback(usecases.forgot));
   router.post('/reset', makeCallback(usecases.reset));
   router.get('/verify/:id', makeCallback(usecases.verifyUser));
-  
-  router.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email'] }));
-  
-  router.post('/auth/facebook/callback', (req, res) => {
-    const accessToken = req.body.access_token;
 
+  // Facebook authentication routes
+  router.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+
+  router.get('/auth/facebook/callback', (req, res, next) => {
     passport.authenticate('facebook', { session: false }, (err, user, info) => {
       if (err) {
         return res.status(500).json({ error: 'Internal Server Error' });
@@ -29,19 +28,21 @@ function init() {
       }
 
       // Generate a token or session for the user
-      const token = generateToken(user); // You need to implement this function
+      const token = generateToken(user); // Implement this function
       res.json({ token, user });
-    })(req, res);
+    })(req, res, next);
   });
 }
 
 function handler(usecase) {}
+
 exports.router = function (U, errors) {
   utils = U;
   E = errors;
   init();
   return router;
 };
+
 exports.useCases = function (U, errors) {
   utils = U;
   E = errors;
