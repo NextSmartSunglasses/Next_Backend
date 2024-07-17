@@ -31,7 +31,12 @@ passport.use(new FacebookStrategy({
           email: profile.emails[0].value,
           facebookId: profile.id,
           accessToken: accessToken,
+          verified: true, // Automatically verify the user
         });
+        await user.save();
+      } else {
+        user.accessToken = accessToken;
+        user.verified = true; // Automatically verify the user if not verified
         await user.save();
       }
       return done(null, user);
