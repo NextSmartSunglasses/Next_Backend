@@ -19,7 +19,7 @@ function init() {
   router.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email'] }));
 
   router.get('/auth/facebook/callback', (req, res, next) => {
-    passport.authenticate('facebook', { session: false }, (err, user, info) => {
+    passport.authenticate('facebook', (err, user, info) => {
       if (err) {
         return res.status(500).json({ error: 'Internal Server Error' });
       }
@@ -29,7 +29,9 @@ function init() {
 
       // Generate a token or session for the user
       const token = generateToken(user); // Implement this function
-      res.json({ token, user });
+
+      // Redirect back to frontend with the token
+      res.redirect(`http://127.0.0.1:58319?token=${token}`);
     })(req, res, next);
   });
 }
