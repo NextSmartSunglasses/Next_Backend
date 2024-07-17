@@ -32,6 +32,8 @@ function init() {
 
       // Generate a token or session for the user
       const token = generateToken(user); // Use the generateToken function
+      const name = user.name;
+
 
       // Redirect back to frontend with the token
       res.redirect(`myapp://auth?token=${token}&name=${encodeURIComponent(name)}`); // Use custom URL scheme for mobile app
