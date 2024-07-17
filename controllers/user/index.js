@@ -34,9 +34,7 @@ function init() {
       const token = generateToken(user); // Use the generateToken function
 
       // Redirect back to frontend with the token
-      res.redirect(`http://localhost:3000?token=${token}`);
-      // For production, use your actual frontend URL
-      // res.redirect(`https://your-frontend-domain.com?token=${token}`);
+      res.redirect(`myapp://auth?token=${token}`); // Use custom URL scheme for mobile app
     })(req, res, next);
   });
 }
