@@ -20,7 +20,7 @@ function init() {
   router.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email'] }));
 
   router.get('/auth/facebook/callback', (req, res, next) => {
-    passport.authenticate('facebook', (err, user, info) => {
+    passport.authenticate('facebook', async (err, user, info) => {
       if (err) {
         console.error('Authentication error:', err); // Log the error
         return res.status(500).json({ error: 'Internal Server Error' });

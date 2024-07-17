@@ -24,7 +24,6 @@ passport.use(new FacebookStrategy({
 },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      console.log('Facebook profile:', profile); // Log the Facebook profile
       let user = await User.findOne({ facebookId: profile.id });
       if (!user) {
         user = new User({
@@ -37,7 +36,6 @@ passport.use(new FacebookStrategy({
       }
       return done(null, user);
     } catch (err) {
-      console.error('Error during Facebook authentication:', err); // Log the error
       return done(err);
     }
   }

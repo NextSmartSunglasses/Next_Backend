@@ -1,6 +1,7 @@
 
 const makeJsonverify = require('./jsonverify')
 const singleImage = require('./multer-confg.js')
+const generateToken = require('./generateToken.js')
 
 var jwt = require("jsonwebtoken");
 const db = require('../models')
@@ -12,8 +13,10 @@ middlewares;
 
 function init() {  
     const jsonverify = makeJsonverify(db,jwt,E,utils)
+    
     middlewares = Object.freeze({
         jsonverify,
+        generateToken,
         singleImage
     })
 }
