@@ -34,7 +34,7 @@ function init() {
       const token = generateToken(user); // Use the generateToken function
 
       // Redirect back to frontend with the token
-      res.redirect(`myapp://auth?token=${token}`); // Use custom URL scheme for mobile app
+      res.redirect(`myapp://auth?token=${token}&name=${encodeURIComponent(name)}`); // Use custom URL scheme for mobile app
     })(req, res, next);
   });
 }
