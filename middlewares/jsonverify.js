@@ -7,12 +7,12 @@ module.exports = function makeJsonverify(db, jwt, E, utils) {
             const token = bearerHeader.split(" ")[1];
 
             try {
-                var decoded = jwt.verify(token, process.env.TOKEN_SECRET); // Use TOKEN_SECRET
+                var decoded = jwt.verify(token, process.env.SignKey); // Use TOKEN_SECRET
 
                 // Log decoded token for debugging
                 console.log("DECODED", decoded);
 
-                const user = await db.User.findById(decoded.data.id);
+                const user = await db.User.findById(decoded.id); // Use decoded.id instead of decoded.data.id
                 if (!user) {
                     throw new E.UserNotAuthenticated("token not valid");
                 }
@@ -23,8 +23,8 @@ module.exports = function makeJsonverify(db, jwt, E, utils) {
                 }
 
                 // Check if the loginStamp matches
-                if (String(user.loginStamp) !== String(decoded.data.loginStamp)) {
-                    console.log(String(user.loginStamp), String(decoded.data.loginStamp));
+                if (String(user.loginStamp) !== String(decoded.loginStamp)) {
+                    console.log(String(user.loginStamp), String(decoded.loginStamp));
                     throw new E.UserNotAuthenticated("user connected on another device.");
                 }
 
@@ -35,7 +35,7 @@ module.exports = function makeJsonverify(db, jwt, E, utils) {
 
                 // Update lastActive timestamp
                 await db.User.updateOne(
-                    { _id: decoded.data.id },
+                    { _id: decoded.id },
                     {
                         $set: {
                             lastActive: new Date(),
