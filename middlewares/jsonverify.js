@@ -12,7 +12,7 @@ module.exports = function makeJsonverify(db, jwt, E, utils) {
                 // Log decoded token for debugging
                 console.log("DECODED", decoded);
 
-                const user = await db.User.findById(decoded.id); // Use decoded.id instead of decoded.data.id
+                const user = await db.User.findById(decoded.data.id); // Use decoded.id instead of decoded.data.id
                 if (!user) {
                     throw new E.UserNotAuthenticated("token not valid");
                 }
