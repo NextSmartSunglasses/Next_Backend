@@ -1,56 +1,56 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function makeJsonverify(db, jwt, E, utils) {
-  return async function jsonverify(req, res, next) {
-    const bearerHeader = req.headers["authorization"];
-    if (typeof bearerHeader !== "undefined") {
-      const token = bearerHeader.split(" ")[1];
+    return async function jsonverify(req, res, next) {
+        const bearerHeader = req.headers["authorization"];
+        if (typeof bearerHeader !== "undefined") {
+            const token = bearerHeader.split(" ")[1];
 
-      try {
-        var decoded = jwt.verify(token, process.env.SignKey); // Use SignKey
+            try {
+                var decoded = jwt.verify(token, process.env.SignKey); // Use SignKey
 
-        // Log decoded token for debugging
-        console.log("DECODED", decoded);
+                // Log decoded token for debugging
+                console.log("DECODED", decoded);
 
-        // Use decoded.data.id instead of decoded.id
-        const user = await db.User.findById(decoded.data.id);
-        if (!user) {
-          throw new E.UserNotAuthenticated("token not valid");
-        }
+                // Use decoded.data.id instead of decoded.id
+                const user = await db.User.findById(decoded.data.id);
+                if (!user) {
+                    throw new E.UserNotAuthenticated("token not valid");
+                }
 
-        // Check if the user is verified
-        if (!user.verified) {
-          throw new E.UserNotAuthenticated("user not verified");
-        }
+                // Check if the user is verified
+                if (!user.verified) {
+                    throw new E.UserNotAuthenticated("user not verified");
+                }
 
-        // Check if the loginStamp matches
-        if (String(user.loginStamp) !== String(decoded.data.loginStamp)) {
-          console.log(String(user.loginStamp), String(decoded.data.loginStamp));
-          throw new E.UserNotAuthenticated("user connected on another device.");
-        }
+                // Check if the loginStamp matches
+                if (String(user.loginStamp) !== String(decoded.data.loginStamp)) {
+                    console.log(String(user.loginStamp), String(decoded.data.loginStamp));
+                    throw new E.UserNotAuthenticated("user connected on another device.");
+                }
 
-        // Remove password before attaching user to request
-        delete user.password;
-        req.user = user;
-        console.log("USER:", user);
+                // Remove password before attaching user to request
+                delete user.password;
+                req.user = user;
+                console.log("USER:", user);
 
-        // Update lastActive timestamp
-        await db.User.updateOne(
-          { _id: decoded.data.id },
-          {
-            $set: {
-              lastActive: new Date(),
+                // Update lastActive timestamp
+                await db.User.updateOne(
+                    { _id: decoded.data.id },
+                    {
+                        $set: {
+                            lastActive: new Date(),
+                        }
+                    }
+                );
+
+                next();
+            } catch (err) {
+                err.status = 401;
+                next(err);
             }
-          }
-        );
-
-        next();
-      } catch (err) {
-        err.status = 401;
-        next(err);
-      }
-    } else {
-      return next(new E.UserNotAuthenticated("token not supplied"));
+        } else {
+            return next(new E.UserNotAuthenticated("token not supplied"));
+        }
     }
-  }
 }

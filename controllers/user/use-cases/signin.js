@@ -46,7 +46,7 @@ module.exports = function makeSignin(db, bcrypt, jwt, E, utils) {
                 { _id: foundUser.id },
                 {
                     $set: {
-                        loginStamp,
+                        loginStamp: loginStamp,
                         lastActive: new Date()
                     }
                 }
