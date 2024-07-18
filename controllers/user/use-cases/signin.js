@@ -28,9 +28,6 @@ module.exports = function makeSignin(db, bcrypt, jwt, E, utils) {
                 throw incorrectCredentials;
             }
 
-            let loginStamp = new Date().toISOString();
-            console.log("Generated loginStamp:", loginStamp);
-
             const payload = {
                 data: {
                     id: foundUser._id,
@@ -39,7 +36,6 @@ module.exports = function makeSignin(db, bcrypt, jwt, E, utils) {
                     email: foundUser.email,
                     role: foundUser.role,
                     createdAt: foundUser.createdAt,
-                    loginStamp: loginStamp,
                     tel: foundUser.tel
                 }
             };
@@ -52,7 +48,6 @@ module.exports = function makeSignin(db, bcrypt, jwt, E, utils) {
                 { _id: foundUser._id },
                 {
                     $set: {
-                        loginStamp: loginStamp,
                         lastActive: new Date()
                     }
                 }

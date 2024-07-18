@@ -25,15 +25,6 @@ module.exports = function makeJsonverify(db, jwt, E, utils) {
                     throw new E.UserNotAuthenticated("user not verified");
                 }
 
-                // Log loginStamp for debugging
-                console.log("LoginStamp comparison - Token:", decoded.data.loginStamp, "User:", user.loginStamp);
-
-                // Check if the loginStamp matches
-                if (String(user.loginStamp) !== String(decoded.data.loginStamp)) {
-                    console.log("Mismatch in loginStamp - Token:", decoded.data.loginStamp, "User:", user.loginStamp);
-                    throw new E.UserNotAuthenticated("user connected on another device.");
-                }
-
                 // Remove password before attaching user to request
                 delete user.password;
                 req.user = user;
