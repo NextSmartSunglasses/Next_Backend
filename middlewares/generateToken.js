@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function generateToken(user) {
+  const loginStamp = new Date().toISOString();
+
   const payload = {
     id: user._id,
     name: user.name,
@@ -8,7 +10,7 @@ module.exports = function generateToken(user) {
     email: user.email,
     role: user.role,
     createdAt: user.createdAt,
-    loginStamp: new Date().toISOString(),
+    loginStamp: loginStamp,
     tel: user.tel,
   };
   return jwt.sign(payload, process.env.SignKey, { expiresIn: '1h' });
