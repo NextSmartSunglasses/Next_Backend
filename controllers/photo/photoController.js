@@ -101,8 +101,8 @@ const getPhotosWithText = async (req, res) => {
       data: photo.data ? photo.data.toString('base64') : '',
       contentType: photo.contentType,
       metadata: photo.metadata,
-      extractedText: photo.extractedText || 'No text extracted',
-      qrCodeData: photo.qrCodeData || 'No QR/Barcode data',
+      extractedText: photo.extractedText || '',
+      qrCodeData: photo.qrCodeData || '',
     }));
 
     res.status(200).json(photosWithText);
@@ -119,8 +119,8 @@ const getExtractedTexts = async (req, res) => {
 
     const texts = photos.map(photo => ({
       name: photo.name,
-      extractedText: photo.extractedText || 'No text extracted',
-      qrCodeData: photo.qrCodeData || 'No QR/Barcode data',
+      extractedText: photo.extractedText || '',
+      qrCodeData: photo.qrCodeData || '',
       image: photo.data ? photo.data.toString('base64') : '',
       uploadedAt: photo.uploadedAt,
     }));
