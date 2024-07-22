@@ -62,19 +62,37 @@ const uploadPhoto = async (req, res) => {
 
 const preprocessImage = async (imageBuffer) => {
   try {
+    // Define minimum width and height
+    const minWidth = 300;
+    const minHeight = 300;
+
+    // Get image metadata (width and height)
+    const { width, height } = await sharp(imageBuffer).metadata();
+
+    // Determine resize dimensions
+    const resizeWidth = width < minWidth ? minWidth : width;
+    const resizeHeight = height < minHeight ? minHeight : height;
+
+    // Process the image
     const processedImage = await sharp(imageBuffer)
-      .resize({ width: 2000 }) // Resize if necessary
-      .grayscale() // Convert to grayscale
-      .normalize() // Normalize the image
-      .sharpen() // Sharpen the image
-      .threshold() // Apply threshold to binarize the image
+      .resize({
+        width: resizeWidth,
+        height: resizeHeight,
+        fit: 'inside', // Maintain aspect ratio
+      })
+      .grayscale()
+      .normalize()
+      .sharpen()
+      .threshold()
       .toBuffer();
+
     return processedImage;
   } catch (error) {
     console.error('Error processing the image:', error);
     throw error;
   }
 };
+
 
 const extractTextFromImage = async (imageBuffer) => {
   try {
