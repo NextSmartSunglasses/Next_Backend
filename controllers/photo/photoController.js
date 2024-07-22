@@ -4,12 +4,14 @@ const sharp = require('sharp');
 const QRCode = require('qrcode');
 const Photo = require('../../models/photo');
 
+
 const uploadPhoto = async (req, res) => {
   try {
     let metadata = {};
     let extractedText = '';
     let qrCodeData = '';
 
+    // Extract EXIF data
     try {
       const exifData = await new Promise((resolve, reject) => {
         new ExifImage({ image: req.file.buffer }, (error, exifData) => {
@@ -22,6 +24,7 @@ const uploadPhoto = async (req, res) => {
       console.error('Error reading EXIF data:', error.message);
     }
 
+    // Extract text from image
     try {
       const processedImage = await preprocessImage(req.file.buffer);
       extractedText = await extractTextFromImage(processedImage);
@@ -29,19 +32,15 @@ const uploadPhoto = async (req, res) => {
       console.error('Error extracting text from image:', error.message);
     }
 
+    // Decode QR code from image
     try {
-      // Assuming you need to decode QR code instead of generating it
-      const qrResult = await new Promise((resolve, reject) => {
-        QRCode.decode(req.file.buffer, (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        });
-      });
-      qrCodeData = qrResult ? qrResult : 'No QR code detected';
+      const qrCodeResult = jsqr(new Uint8ClampedArray(req.file.buffer), req.file.width, req.file.height);
+      qrCodeData = qrCodeResult ? qrCodeResult.data : 'No QR code detected';
     } catch (error) {
       console.error('Error extracting QR code data:', error.message);
     }
 
+    // Save the photo
     const { name, userId } = req.body;
     const newPhoto = new Photo({
       name: req.file.originalname,
@@ -64,9 +63,11 @@ const uploadPhoto = async (req, res) => {
 const preprocessImage = async (imageBuffer) => {
   try {
     const processedImage = await sharp(imageBuffer)
-      .grayscale()
-      .sharpen()
-      .threshold()
+      .resize({ width: 2000 }) // Resize if necessary
+      .grayscale() // Convert to grayscale
+      .normalize() // Normalize the image
+      .sharpen() // Sharpen the image
+      .threshold() // Apply threshold to binarize the image
       .toBuffer();
     return processedImage;
   } catch (error) {
@@ -79,17 +80,20 @@ const extractTextFromImage = async (imageBuffer) => {
   try {
     const { data: { text } } = await Tesseract.recognize(
       imageBuffer,
-      'eng+fra+ara', // Adding multiple languages here
+      'eng+fra', // List all languages if needed
       {
-        logger: m => console.log(m) // Log progress
+        logger: m => console.log(m),
+        oem: 3, // OCR Engine Mode: 3 (default, both standard and LSTM OCR)
+        psm: 6  // Page Segmentation Mode: 6 (Assume a single uniform block of text)
       }
     );
-    return text;
+    return text;  
   } catch (error) {
     console.error('Error processing the image:', error);
     throw error;
   }
 };
+
 
 const getPhotosWithText = async (req, res) => {
   try {
