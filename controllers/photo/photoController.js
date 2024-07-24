@@ -34,7 +34,7 @@ const uploadPhoto = async (req, res) => {
 
     // Decode QR code from image
     try {
-      const qrCodeResult = jsqr(new Uint8ClampedArray(req.file.buffer), req.file.width, req.file.height);
+      const qrCodeResult = jsQR(new Uint8ClampedArray(req.file.buffer), req.file.width, req.file.height);
       qrCodeData = qrCodeResult ? qrCodeResult.data : 'No QR code detected';
     } catch (error) {
       console.error('Error extracting QR code data:', error.message);
@@ -92,7 +92,6 @@ const preprocessImage = async (imageBuffer) => {
     throw error;
   }
 };
-
 
 const extractTextFromImage = async (imageBuffer) => {
   try {
@@ -237,5 +236,6 @@ module.exports = {
   getExtractedTexts,
   uploadScannedQRCode,
   uploadPhotoForTextExtraction,
+  extractTextFromImage,
   getPhotosWithText
 };
