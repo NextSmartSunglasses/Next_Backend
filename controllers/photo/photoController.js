@@ -1,9 +1,9 @@
 const ExifImage = require('exif').ExifImage;
 const Tesseract = require('tesseract.js');
 const sharp = require('sharp');
-const QRCode = require('qrcode');
+const jsQR = require('jsqr'); // Ensure jsQR is installed and imported correctly
 const Photo = require('../../models/photo');
-
+const PNG = require('png-js'); // Add this line
 
 const uploadPhoto = async (req, res) => {
   try {
@@ -34,31 +34,49 @@ const uploadPhoto = async (req, res) => {
 
     // Decode QR code from image
     try {
-      const qrCodeResult = jsQR(new Uint8ClampedArray(req.file.buffer), req.file.width, req.file.height);
-      qrCodeData = qrCodeResult ? qrCodeResult.data : 'No QR code detected';
+      // Convert image buffer to PNG format
+      const pngBuffer = await sharp(req.file.buffer)
+        .resize(800, 800, { fit: 'inside' })
+        .png()
+        .toBuffer();
+
+      // Parse the PNG buffer using png-js
+      const png = new PNG(pngBuffer);
+      png.decode((pixels) => {
+        const qrCodeResult = jsQR(pixels, png.width, png.height);
+        qrCodeData = qrCodeResult ? qrCodeResult.data : 'No QR code detected';
+
+        // Save the photo
+        const { name, userId } = req.body;
+        const newPhoto = new Photo({
+          name: req.file.originalname,
+          data: req.file.buffer,
+          contentType: req.file.mimetype,
+          user: userId,
+          metadata: metadata,
+          extractedText: extractedText,
+          qrCodeData: qrCodeData
+        });
+
+        newPhoto.save()
+          .then(() => {
+            res.status(201).json({ message: 'Photo uploaded successfully!', metadata: metadata, extractedText: extractedText, qrCodeData: qrCodeData });
+          })
+          .catch((error) => {
+            console.error('Error uploading photo:', error.message);
+            res.status(500).json({ error: 'Internal server error' });
+          });
+      });
     } catch (error) {
       console.error('Error extracting QR code data:', error.message);
     }
-
-    // Save the photo
-    const { name, userId } = req.body;
-    const newPhoto = new Photo({
-      name: req.file.originalname,
-      data: req.file.buffer,
-      contentType: req.file.mimetype,
-      user: userId,
-      metadata: metadata,
-      extractedText: extractedText,
-      qrCodeData: qrCodeData
-    });
-
-    await newPhoto.save();
-    res.status(201).json({ message: 'Photo uploaded successfully!', metadata: metadata, extractedText: extractedText, qrCodeData: qrCodeData });
   } catch (error) {
     console.error('Error uploading photo:', error.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+
 
 const preprocessImage = async (imageBuffer) => {
   try {
@@ -104,52 +122,10 @@ const extractTextFromImage = async (imageBuffer) => {
         psm: 6  // Page Segmentation Mode: 6 (Assume a single uniform block of text)
       }
     );
-    return text;  
+    return text;
   } catch (error) {
     console.error('Error processing the image:', error);
     throw error;
-  }
-};
-
-
-const getPhotosWithText = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const photos = await Photo.find({ user: userId });
-
-    const photosWithText = photos.map(photo => ({
-      name: photo.name,
-      data: photo.data ? photo.data.toString('base64') : '',
-      contentType: photo.contentType,
-      metadata: photo.metadata,
-      extractedText: photo.extractedText || '',
-      qrCodeData: photo.qrCodeData || '',
-    }));
-
-    res.status(200).json(photosWithText);
-  } catch (error) {
-    console.error('Error retrieving photos:', error.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-const getExtractedTexts = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const photos = await Photo.find({ user: userId });
-
-    const texts = photos.map(photo => ({
-      name: photo.name,
-      extractedText: photo.extractedText || '',
-      qrCodeData: photo.qrCodeData || '',
-      image: photo.data ? photo.data.toString('base64') : '',
-      uploadedAt: photo.uploadedAt,
-    }));
-
-    res.status(200).json(texts);
-  } catch (err) {
-    console.error('Error retrieving texts:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -172,6 +148,26 @@ const getPhotos = async (req, res) => {
   }
 };
 
+const getPhotosWithText = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const photos = await Photo.find({ user: userId });
+
+    const photosWithText = photos.map(photo => ({
+      name: photo.name,
+      data: photo.data ? photo.data.toString('base64') : '',
+      contentType: photo.contentType,
+      metadata: photo.metadata,
+      extractedText: photo.extractedText || '',
+      qrCodeData: photo.qrCodeData || '',
+    }));
+
+    res.status(200).json(photosWithText);
+  } catch (error) {
+    console.error('Error retrieving photos:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 const uploadPhotoForTextExtraction = async (req, res) => {
   try {
@@ -233,9 +229,8 @@ const uploadScannedQRCode = async (req, res) => {
 module.exports = {
   uploadPhoto,
   getPhotos,
-  getExtractedTexts,
-  uploadScannedQRCode,
+  getPhotosWithText,
   uploadPhotoForTextExtraction,
-  extractTextFromImage,
-  getPhotosWithText
+  uploadScannedQRCode,
+  extractTextFromImage
 };

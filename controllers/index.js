@@ -13,7 +13,7 @@ function init() {
 	router.use("/user", require("./user").router(U,E,M))
 	router.use("/users", require("./users").router(U,E,M))
 	router.use("/payment", require('./payment').router(U,E,M))
-    router.use("/", require('./photo/photoRoutes'));  // Correct path
+    router.use("/", require('./photo/photoRoutes')(U, E, M));  // Correct path and pass necessary parameters
 
 	
 }

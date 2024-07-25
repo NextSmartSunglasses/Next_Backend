@@ -7,20 +7,20 @@ const upload = multer({ storage: storage });
 
 module.exports = (db, jwt, errors, utils) => {
   const router = express.Router();
-  const jsonverify = require('../../middlewares/jsonverify')(db, jwt, errors, utils); // Adjust as necessary
+  const jsonverify = require('../../middlewares/jsonverify')(db, jwt, errors, utils);
 
   // Route for uploading photo (without authentication)
   router.post('/upload', upload.single('photo'), photoController.uploadPhoto);
 
   // Route for viewing user's photos (with authentication)
-  router.get('/photos/user', jsonverify, photoController.getPhotos); // Ensure jsonverify is correctly imported and used
+  router.get('/photos/user', jsonverify, photoController.getPhotos);
 
   // Routes for text extraction
   router.post('/uploadForText', upload.single('photo'), photoController.uploadPhotoForTextExtraction);
   router.get('/photos/texts/user', jsonverify, photoController.getPhotosWithText);
 
   // Route for saving scanned QR code
-  router.post('/uploadScannedQRCode', upload.single('photo'), photoController.uploadScannedQRCode);
+  router.post('/uploadScannedQRCode', jsonverify, photoController.uploadScannedQRCode); // Ensure this route uses jsonverify
 
   return router;
 };
