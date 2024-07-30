@@ -4,6 +4,8 @@ const sharp = require('sharp');
 const jsQR = require('jsqr'); // Ensure jsQR is installed and imported correctly
 const Photo = require('../../models/photo');
 const PNG = require('png-js'); // Add this line
+const { exec } = require('child_process');
+
 
 const uploadPhoto = async (req, res) => {
   try {
