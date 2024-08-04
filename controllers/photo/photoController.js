@@ -1,17 +1,17 @@
 const ExifImage = require('exif').ExifImage;
 const Tesseract = require('tesseract.js');
 const sharp = require('sharp');
-const jsQR = require('jsqr'); // Ensure jsQR is installed and imported correctly
+const jsQR = require('jsqr');
+const bwipjs = require('bwip-js');
 const Photo = require('../../models/photo');
-const PNG = require('png-js'); // Add this line
-const { exec } = require('child_process');
-
+const PNG = require('png-js');
 
 const uploadPhoto = async (req, res) => {
   try {
     let metadata = {};
     let extractedText = '';
     let qrCodeData = '';
+    let barcodeData = '';
 
     // Extract EXIF data
     try {
@@ -36,17 +36,32 @@ const uploadPhoto = async (req, res) => {
 
     // Decode QR code from image
     try {
-      // Convert image buffer to PNG format
       const pngBuffer = await sharp(req.file.buffer)
         .resize(800, 800, { fit: 'inside' })
         .png()
         .toBuffer();
 
-      // Parse the PNG buffer using png-js
       const png = new PNG(pngBuffer);
-      png.decode((pixels) => {
+      png.decode(async (pixels) => {
         const qrCodeResult = jsQR(pixels, png.width, png.height);
         qrCodeData = qrCodeResult ? qrCodeResult.data : 'No QR code detected';
+
+        // Decode barcode from image
+        try {
+          // Assuming the image buffer contains the barcode
+          const barcodeResult = await bwipjs.toBuffer({
+            bcid: 'code128',       // Barcode type
+            text: extractedText.trim(), // Data to encode from extracted text
+            scale: 3,              // 3x scaling factor
+            height: 10,            // Bar height, in millimeters
+            includetext: true,     // Show human-readable text
+            textxalign: 'center',  // Align text to the center
+          });
+
+          barcodeData = barcodeResult ? barcodeResult.toString() : 'No barcode detected';
+        } catch (error) {
+          console.error('Error extracting barcode data:', error.message);
+        }
 
         // Save the photo
         const { name, userId } = req.body;
@@ -57,12 +72,13 @@ const uploadPhoto = async (req, res) => {
           user: userId,
           metadata: metadata,
           extractedText: extractedText,
-          qrCodeData: qrCodeData
+          qrCodeData: qrCodeData,
+          barcodeData: barcodeData,
         });
 
         newPhoto.save()
           .then(() => {
-            res.status(201).json({ message: 'Photo uploaded successfully!', metadata: metadata, extractedText: extractedText, qrCodeData: qrCodeData });
+            res.status(201).json({ message: 'Photo uploaded successfully!', metadata: metadata, extractedText: extractedText, qrCodeData: qrCodeData, barcodeData: barcodeData });
           })
           .catch((error) => {
             console.error('Error uploading photo:', error.message);
@@ -78,34 +94,24 @@ const uploadPhoto = async (req, res) => {
   }
 };
 
-
-
 const preprocessImage = async (imageBuffer) => {
   try {
-    // Define minimum width and height
     const minWidth = 300;
     const minHeight = 300;
-
-    // Get image metadata (width and height)
     const { width, height } = await sharp(imageBuffer).metadata();
-
-    // Determine resize dimensions
     const resizeWidth = width < minWidth ? minWidth : width;
     const resizeHeight = height < minHeight ? minHeight : height;
-
-    // Process the image
     const processedImage = await sharp(imageBuffer)
       .resize({
         width: resizeWidth,
         height: resizeHeight,
-        fit: 'inside', // Maintain aspect ratio
+        fit: 'inside',
       })
       .grayscale()
       .normalize()
       .sharpen()
       .threshold()
       .toBuffer();
-
     return processedImage;
   } catch (error) {
     console.error('Error processing the image:', error);
@@ -117,11 +123,11 @@ const extractTextFromImage = async (imageBuffer) => {
   try {
     const { data: { text } } = await Tesseract.recognize(
       imageBuffer,
-      'eng+fra', // List all languages if needed
+      'eng+fra',
       {
         logger: m => console.log(m),
-        oem: 3, // OCR Engine Mode: 3 (default, both standard and LSTM OCR)
-        psm: 6  // Page Segmentation Mode: 6 (Assume a single uniform block of text)
+        oem: 3,
+        psm: 6
       }
     );
     return text;
@@ -135,14 +141,12 @@ const getPhotos = async (req, res) => {
   try {
     const userId = req.user._id;
     const photos = await Photo.find({ user: userId });
-
     const photosWithBase64 = photos.map(photo => ({
       name: photo.name,
-      data: photo.data ? photo.data.toString('base64') : '', // Ensure data is base64 encoded
+      data: photo.data ? photo.data.toString('base64') : '',
       contentType: photo.contentType,
       uploadedAt: photo.uploadedAt,
     }));
-
     res.status(200).json(photosWithBase64);
   } catch (err) {
     console.error('Error retrieving photos:', err.message);
@@ -154,7 +158,6 @@ const getPhotosWithText = async (req, res) => {
   try {
     const userId = req.user._id;
     const photos = await Photo.find({ user: userId });
-
     const photosWithText = photos.map(photo => ({
       name: photo.name,
       data: photo.data ? photo.data.toString('base64') : '',
@@ -162,8 +165,8 @@ const getPhotosWithText = async (req, res) => {
       metadata: photo.metadata,
       extractedText: photo.extractedText || '',
       qrCodeData: photo.qrCodeData || '',
+      barcodeData: photo.barcodeData || '',
     }));
-
     res.status(200).json(photosWithText);
   } catch (error) {
     console.error('Error retrieving photos:', error.message);
@@ -187,7 +190,6 @@ const uploadPhotoForTextExtraction = async (req, res) => {
     }
 
     const { name, userId } = req.body;
-
     const newPhoto = new Photo({
       name: req.file.originalname,
       data: req.file.buffer,

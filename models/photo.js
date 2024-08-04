@@ -8,6 +8,8 @@ const photoSchema = new mongoose.Schema({
   metadata: Object,
   extractedText: String,
   qrCodeData: String, // Add this field
+  barcodeData: String, // Barcode data field
+
   createdAt: { type: Date, default: Date.now }
 });
 
