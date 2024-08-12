@@ -229,12 +229,29 @@ const uploadScannedQRCode = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+const deletePhotoByName = async (req, res) => {
+  try {
+    const { photoName } = req.params;
 
+    // Find and delete the photo by name
+    const deletedPhoto = await Photo.findOneAndDelete({ name: photoName });
+    if (!deletedPhoto) {
+      return res.status(404).json({ message: 'Photo not found' });
+    }
+
+    res.status(200).json({ message: 'Photo deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting photo:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 module.exports = {
   uploadPhoto,
   getPhotos,
   getPhotosWithText,
   uploadPhotoForTextExtraction,
   uploadScannedQRCode,
-  extractTextFromImage
+  extractTextFromImage,
+  deletePhotoByName // Add deletePhoto to exports
+
 };

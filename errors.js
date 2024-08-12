@@ -1,64 +1,75 @@
 class ExpressValidationError extends Error {
-	constructor(message, details) {
-		super(message);
-		this.name = "ExpressValidationError";
-		this.status = "400";
-		this.details = details;
-	}
+    constructor(message, details) {
+        super(message);
+        this.name = "ExpressValidationError";
+        this.statusCode = 400;
+        this.details = details;
+    }
 }
 
 class ExistsError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "ExistsError";
-		this.status = "400";
-	}
+    constructor(message) {
+        super(message);
+        this.name = "ExistsError";
+        this.statusCode = 400;
+    }
 }
 
 class InvalidValue extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "InvalidValue";
-		this.status = "400";
-	}
+    constructor(message) {
+        super(message);
+        this.name = "InvalidValue";
+        this.statusCode = 400;
+    }
 }
 
 class InvalidAction extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "InvalidAction";
-		this.status = "400";
-	}
+    constructor(message) {
+        super(message);
+        this.name = "InvalidAction";
+        this.statusCode = 400;
+    }
 }
 
 class NotFoundError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "NotFoundError";
-		this.status = "404";
-	}
+    constructor(message) {
+        super(message);
+        this.name = "NotFoundError";
+        this.statusCode = 404;
+    }
 }
 
 class UserNotAuthenticated extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "UserNotAuthenticated";
-		this.status = "401";
-	}
+    constructor(message) {
+        super(message);
+        this.name = "UserNotAuthenticated";
+        this.statusCode = 401;
+    }
 }
 
 class UserNotAuthorized extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "UserNotAuthorized";
-		this.status = "403";
-	}
+    constructor(message) {
+        super(message);
+        this.name = "UserNotAuthorized";
+        this.statusCode = 403;
+    }
 }
 
-module.exports.NotFoundError = NotFoundError;
-module.exports.ExpressValidationError = ExpressValidationError;
-module.exports.ExistsError = ExistsError;
-module.exports.UserNotAuthenticated = UserNotAuthenticated;
-module.exports.UserNotAuthorized = UserNotAuthorized;
-module.exports.InvalidValue = InvalidValue
-module.exports.InvalidAction = InvalidAction
+class UserExistsError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "UserExistsError";
+        this.statusCode = 409; // Conflict
+    }
+}
+
+module.exports = {
+    ExpressValidationError,
+    ExistsError,
+    InvalidValue,
+    InvalidAction,
+    NotFoundError,
+    UserNotAuthenticated,
+    UserNotAuthorized,
+    UserExistsError
+};

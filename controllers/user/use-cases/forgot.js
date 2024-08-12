@@ -1,20 +1,24 @@
 const crypto = require("crypto");
+const twilio = require('twilio');
 
-module.exports = function makeForgot(db, E, utils) {
+// Load environment variables
+require('dotenv').config();
+
+// Configure Twilio
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+module.exports = function makeForgot(db, E) {
   return async function forgot(req, res, next) {
-    const { email, tel } = req.body;
+    const { tel } = req.body;
 
-    let user;
-    if (email) {
-      user = await db.User.findOne({ email });
-    } else if (tel) {
-      user = await db.User.findOne({ tel });
-    } else {
-      throw new E.InvalidInputError("Email or phone number is required");
+    if (!tel) {
+      return next(new E.InvalidInputError("Phone number is required"));
     }
 
+    const user = await db.User.findOne({ tel });
+
     if (!user) {
-      throw new E.NotFoundError("User not found");
+      return next(new E.NotFoundError("User not found"));
     }
 
     const token = crypto.randomBytes(20).toString("hex");
@@ -26,12 +30,22 @@ module.exports = function makeForgot(db, E, utils) {
     });
     await resetPassword.save();
 
-    if (email) {
-      await utils.email.sendForgotPassword(email, token);
-    } else if (tel) {
-      await utils.sms.sendForgotPassword(tel, token);
+    try {
+      await sendForgotPasswordSMS(tel, token);
+      res.send({ message: "Password reset link has been sent" });
+    } catch (err) {
+      return next(err);
     }
-
-    res.send({ message: "Password reset link has been sent" });
   };
 };
+
+async function sendForgotPasswordSMS(tel, token) {
+  const resetUrl = `https://5eba-102-159-150-58.ngrok-free.app/reset/${token}`;
+  const message = `You requested a password reset. Please click the following link to reset your password: ${resetUrl}`;
+
+  await twilioClient.messages.create({
+    body: message,
+    from: '+21650380604', // Your Twilio phone number
+    to: tel
+  });
+}

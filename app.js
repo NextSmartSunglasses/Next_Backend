@@ -40,6 +40,23 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(limiter.IPLimiter);
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.statusCode || 500).json({ message: err.message });
+});
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    
+    if (err.name === 'ExpressValidationError') {
+        return res.status(400).json({ 
+            message: err.message,
+            errors: err.details 
+        });
+    }
+
+    res.status(err.statusCode || 500).json({ message: err.message });
+});
 
 app.use(session({
     secret: 'your secret',
